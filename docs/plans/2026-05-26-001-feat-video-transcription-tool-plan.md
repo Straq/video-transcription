@@ -166,6 +166,19 @@ Backend → DELETE Blob URL (po completed/error)
 - [x] 🟡 [N3] **vitest.config.ts** — usuń `globals: true` (testy importują explicite, nie korzystają z globals)
 - [x] 🟡 [N4] **package.json** — zamień `^` na exact versions we wszystkich dependencies
 
+**Do poprawy po review poprawek Unit 1:**
+
+- [ ] 🟠 [F1] **lib/resend.ts:26** — HTML injection: zastąpić `params.appUrl` bezpośrednim `env.APP_URL` (lub `z.string().url().parse(params.appUrl)` przed interpolacją)
+- [ ] 🟠 [F2] **lib/assemblyai.ts:93,111** — `console.error` w kodzie produkcyjnym — usunąć lub zastąpić loggerem; nie logować body z zewnętrznego API
+- [ ] 🟠 [F3] **lib/__tests__/resend.test.ts:2** — usuń nieużywany `import type { Resend as ResendType }`
+- [ ] 🟠 [F4] **lib/__tests__/resend.test.ts:8-12** — zastąpić `as never` + class mock zwykłą arrow-function factory `() => ({ emails: { send: mockSend } })`
+- [ ] 🟠 [F5] **lib/__tests__/assemblyai.test.ts** — dodaj test: `createTranscript` z całkowicie nieprawidłowym URL (`"not-a-url"`) → `"Invalid audio URL"`
+- [ ] 🟠 [F6] **lib/__tests__/assemblyai.test.ts** — dodaj test: `getTranscript` z malformed API response → ZodError (np. brak pola `id`)
+- [ ] 🟠 [F7] **lib/__tests__/resend.test.ts** — dodaj test: `sendTranscriptionReadyEmail` przy brakujących env vars → throw na import
+- [ ] 🟡 [N1] **lib/__tests__/env.test.ts:20** — usuń redundantny `vi.resetModules()` z `afterEach` (wystarczy `beforeEach`)
+- [ ] 🟡 [N2] **lib/assemblyai.ts:48** — dodaj komentarz przy `TRANSCRIPT_ID_PATTERN` o źródle wzorca
+- [ ] 🟡 [N3] **lib/resend.ts** — dodaj `z.string().email().parse(params.to)` na początku `sendTranscriptionReadyEmail`
+
 ---
 
 - [ ] **Unit 2: Upload UI + Vercel Blob**
