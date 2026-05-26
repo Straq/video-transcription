@@ -241,6 +241,16 @@ Backend → DELETE Blob URL (po completed/error)
 - [ ] POST `/api/transcribe` z prawdziwym Blob URL zwraca transcript ID
 - [ ] GET `/api/transcribe/:id` zwraca status `queued` lub `processing`
 
+**Do poprawy po review Unit 3:**
+
+- [ ] 🟠 [S-P2-1] **app/api/transcribe/route.ts:5-7** — POST akceptuje dowolny HTTPS URL jako blobUrl bez walidacji hosta; dodaj `.refine()` lub sprawdzenie w `validateAudioUrl`
+- [ ] 🟠 [A-P2-4] **lib/assemblyai.ts:2,103-105** — przenieś `deleteBlob` i `import del from @vercel/blob` do `lib/blob.ts` (SRP violation)
+- [ ] 🟠 [T-P2-5] **app/api/transcribe/__tests__/route.test.ts** — dodaj test: HTTP blobUrl → 500 "Audio URL must use HTTPS"
+- [ ] 🟠 [T-P2-6] **app/api/transcribe/[id]/__tests__/route.test.ts:74** — dodaj asercję `expect(body.error).toBe("Audio file corrupted")`
+- [ ] 🟡 [N1] **app/api/transcribe/route.ts:26, [id]/route.ts:43** — zastąp `(error as Error).message` helper `toErrorMessage(unknown): string` w `lib/errors.ts`
+- [ ] 🟡 [N2] **app/api/transcribe/[id]/route.ts** — nieprawidłowy transcript ID zwraca 500 zamiast 400; dodaj walidację ID na początku handlera
+- [ ] 🟡 [N6] **app/api/transcribe/[id]/__tests__/route.test.ts:10** — usuń nieużywaną stałą `ENCODED_BLOB_URL`
+
 ---
 
 - [ ] **Unit 4: Polling + Progress UI**
