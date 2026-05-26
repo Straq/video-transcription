@@ -212,7 +212,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 3: AssemblyAI Transcription API**
+- [x] **Unit 3: AssemblyAI Transcription API**
 
 **Cel:** Server-side endpointy do tworzenia joba transkrypcji i sprawdzania statusu. Cleanup Blob po zakończeniu.
 
@@ -232,14 +232,14 @@ Backend → DELETE Blob URL (po completed/error)
 - Cleanup: `del()` z `@vercel/blob` po `completed` lub `error`
 
 **Scenariusze testowe:**
-- [Unit] `createTranscript()` wysyła poprawne parametry do AssemblyAI
-- [Unit] `getTranscript()` zwraca `{ status: 'processing' }` gdy jeszcze nie gotowe
-- [Unit] Blob cleanup wywoływany po `completed` i `error`
-- [Unit] `getTranscript()` zwraca `utterances` z poprawnymi typami
+- [x] [Unit] `createTranscript()` wysyła poprawne parametry do AssemblyAI
+- [x] [Unit] `getTranscript()` zwraca `{ status: 'processing' }` gdy jeszcze nie gotowe
+- [x] [Unit] Blob cleanup wywoływany po `completed` i `error`
+- [x] [Unit] `getTranscript()` zwraca `utterances` z poprawnymi typami
 
 **Weryfikacja:**
-- POST `/api/transcribe` z prawdziwym Blob URL zwraca transcript ID
-- GET `/api/transcribe/:id` zwraca status `queued` lub `processing`
+- [ ] POST `/api/transcribe` z prawdziwym Blob URL zwraca transcript ID
+- [ ] GET `/api/transcribe/:id` zwraca status `queued` lub `processing`
 
 ---
 

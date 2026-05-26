@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+vi.mock("@vercel/blob", () => ({
+  del: vi.fn(),
+}));
+
 const ALL_REQUIRED_ENV = {
   ASSEMBLYAI_API_KEY: "test-key",
   RESEND_API_KEY: "test-resend-key",
@@ -198,5 +202,35 @@ describe("getTranscript", () => {
 
     const { getTranscript } = await import("../assemblyai");
     await expect(getTranscript("t-1")).rejects.toThrow();
+  });
+});
+
+describe("deleteBlob", () => {
+  const BLOB_URL = "https://abc123.public.blob.vercel-storage.com/video.mp4";
+
+  beforeEach(() => {
+    vi.resetModules();
+    Object.assign(process.env, ALL_REQUIRED_ENV);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    for (const key of Object.keys(ALL_REQUIRED_ENV)) {
+      delete process.env[key];
+    }
+  });
+
+  it("calls del with the provided URL", async () => {
+    const { deleteBlob } = await import("../assemblyai");
+    const { del } = await import("@vercel/blob");
+    await deleteBlob(BLOB_URL);
+    expect(vi.mocked(del)).toHaveBeenCalledWith(BLOB_URL);
+  });
+
+  it("propagates errors from del", async () => {
+    const { del } = await import("@vercel/blob");
+    vi.mocked(del).mockRejectedValueOnce(new Error("BlobNotFound"));
+    const { deleteBlob } = await import("../assemblyai");
+    await expect(deleteBlob(BLOB_URL)).rejects.toThrow("BlobNotFound");
   });
 });

@@ -1,4 +1,5 @@
 import "server-only";
+import { del } from "@vercel/blob";
 import { z } from "zod";
 import { env } from "./env";
 
@@ -97,6 +98,10 @@ export async function createTranscript(
 
   const data = CreateTranscriptResponseSchema.parse(await response.json());
   return data.id;
+}
+
+export async function deleteBlob(url: string): Promise<void> {
+  await del(url);
 }
 
 export async function getTranscript(id: string): Promise<TranscriptResult> {
