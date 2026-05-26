@@ -78,6 +78,13 @@ describe("createTranscript", () => {
       createTranscript({ audioUrl: "http://example.com/video.mp4" })
     ).rejects.toThrow("Audio URL must use HTTPS");
   });
+
+  it("throws on completely invalid audio URL", async () => {
+    const { createTranscript } = await import("../assemblyai");
+    await expect(
+      createTranscript({ audioUrl: "not-a-url-at-all" })
+    ).rejects.toThrow("Invalid audio URL");
+  });
 });
 
 describe("getTranscript", () => {
@@ -180,5 +187,16 @@ describe("getTranscript", () => {
     await expect(getTranscript("../../etc/passwd")).rejects.toThrow(
       "Invalid transcript ID format"
     );
+  });
+
+  it("throws when API response is missing required fields", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: "completed" }), // missing required 'id' field
+    } as Response);
+
+    const { getTranscript } = await import("../assemblyai");
+    await expect(getTranscript("t-1")).rejects.toThrow();
   });
 });

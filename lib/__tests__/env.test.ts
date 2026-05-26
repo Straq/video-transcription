@@ -16,7 +16,6 @@ describe("env validation", () => {
   });
 
   afterEach(() => {
-    vi.resetModules();
     for (const key of Object.keys(REQUIRED_VARS)) {
       delete process.env[key];
     }

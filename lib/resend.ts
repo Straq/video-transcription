@@ -1,6 +1,7 @@
 import "server-only";
 // API routes using this module must set: export const runtime = "nodejs"
 import { Resend } from "resend";
+import { z } from "zod";
 import { env } from "./env";
 
 function getResendClient(): Resend {
@@ -9,12 +10,13 @@ function getResendClient(): Resend {
 
 export interface SendTranscriptionReadyEmailParams {
   to: string;
-  appUrl: string;
 }
 
 export async function sendTranscriptionReadyEmail(
   params: SendTranscriptionReadyEmailParams
 ): Promise<void> {
+  z.string().email("Invalid recipient email address").parse(params.to);
+
   const resend = getResendClient();
 
   const { error } = await resend.emails.send({
@@ -23,7 +25,7 @@ export async function sendTranscriptionReadyEmail(
     subject: "Twoja transkrypcja jest gotowa",
     html: `
       <p>Twoja transkrypcja wideo została zakończona.</p>
-      <p><a href="${params.appUrl}">Wróć do narzędzia</a>, aby pobrać wynik.</p>
+      <p><a href="${env.APP_URL}">Wróć do narzędzia</a>, aby pobrać wynik.</p>
     `,
   });
 

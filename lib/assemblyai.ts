@@ -45,6 +45,7 @@ const GetTranscriptResponseSchema = z.object({
 });
 
 const ASSEMBLYAI_BASE_URL = "https://api.assemblyai.com/v2";
+// AssemblyAI IDs are alphanumeric with hyphens/underscores — blocks path traversal injection
 const TRANSCRIPT_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 function assemblyHeaders(): HeadersInit {
@@ -89,8 +90,6 @@ export async function createTranscript(
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    console.error(`AssemblyAI create transcript error: ${response.status}`, body);
     throw new Error(
       `AssemblyAI create transcript failed with status ${response.status}`
     );
@@ -108,8 +107,6 @@ export async function getTranscript(id: string): Promise<TranscriptResult> {
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    console.error(`AssemblyAI get transcript error: ${response.status}`, body);
     throw new Error(
       `AssemblyAI get transcript failed with status ${response.status}`
     );

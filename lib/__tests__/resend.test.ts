@@ -1,15 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { Resend as ResendType } from "resend";
 
 const mockSend = vi.fn();
 
 vi.mock("resend", () => ({
-  Resend: vi.fn().mockImplementation(
-    // eslint-disable-next-line @typescript-eslint/no-extraneous-class
-    class {
-      emails = { send: mockSend };
-    } as never
-  ),
+  Resend: function MockResend() {
+    return { emails: { send: mockSend } };
+  },
 }));
 
 const ALL_REQUIRED_ENV = {
@@ -36,17 +32,14 @@ describe("sendTranscriptionReadyEmail", () => {
     mockSend.mockResolvedValueOnce({ data: { id: "email-123" }, error: null });
 
     const { sendTranscriptionReadyEmail } = await import("../resend");
-    await sendTranscriptionReadyEmail({
-      to: "user@example.com",
-      appUrl: "https://video-transcription.vercel.app",
-    });
+    await sendTranscriptionReadyEmail({ to: "user@example.com" });
 
     expect(mockSend).toHaveBeenCalledWith(
       expect.objectContaining({
         from: "noreply@example-domain.com",
         to: "user@example.com",
         subject: "Twoja transkrypcja jest gotowa",
-        html: expect.stringContaining("https://video-transcription.vercel.app"),
+        html: expect.stringContaining("http://localhost:3000"),
       })
     );
   });
@@ -54,15 +47,25 @@ describe("sendTranscriptionReadyEmail", () => {
   it("throws when Resend returns an error", async () => {
     mockSend.mockResolvedValueOnce({
       data: null,
-      error: { message: "Invalid recipient" },
+      error: { message: "Delivery failed" },
     });
 
     const { sendTranscriptionReadyEmail } = await import("../resend");
     await expect(
-      sendTranscriptionReadyEmail({
-        to: "bad@",
-        appUrl: "https://video-transcription.vercel.app",
-      })
-    ).rejects.toThrow("Resend send failed: Invalid recipient");
+      sendTranscriptionReadyEmail({ to: "user@example.com" })
+    ).rejects.toThrow("Resend send failed: Delivery failed");
+  });
+
+  it("throws when recipient email is invalid", async () => {
+    const { sendTranscriptionReadyEmail } = await import("../resend");
+    await expect(
+      sendTranscriptionReadyEmail({ to: "not-an-email" })
+    ).rejects.toThrow("Invalid recipient email address");
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("throws when RESEND_API_KEY is missing", async () => {
+    delete process.env.RESEND_API_KEY;
+    await expect(import("../resend")).rejects.toThrow("RESEND_API_KEY");
   });
 });
