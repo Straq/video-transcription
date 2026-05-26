@@ -20,10 +20,10 @@ export default function TranscriptionViewer({
         </p>
       )}
       <ol className="space-y-4" aria-label="Transkrypcja">
-        {utterances.map((u, i) => {
+        {utterances.map((u) => {
           const name = speakerNames[u.speaker] ?? u.speaker;
           return (
-            <li key={i} className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+            <li key={`${u.start}-${u.speaker}`} className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
               <span className="text-xs text-muted-foreground font-mono mt-0.5 whitespace-nowrap">
                 {msToTimestamp(u.start)}
               </span>

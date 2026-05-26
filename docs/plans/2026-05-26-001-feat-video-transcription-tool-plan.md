@@ -305,7 +305,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [x] **Unit 5: Transcript Viewer + Speaker Editor**
+- [x] **Unit 5: Transcript Viewer + Speaker Editor** ✅ (review fixes applied)
 
 **Cel:** Wyświetlenie utterances w formacie `HH:MM:SS.mmm - Imię`, inline edycja nazw mówców.
 
