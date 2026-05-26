@@ -1,22 +1,19 @@
 import { NextResponse } from "next/server";
-import { getTranscript, deleteBlob } from "@/lib/assemblyai";
+import { getTranscript } from "@/lib/assemblyai";
+import { deleteBlob, isValidBlobUrl } from "@/lib/blob";
+import { toErrorMessage } from "@/lib/errors";
 
-const VERCEL_BLOB_HOST_RE = /\.vercel-storage\.com$/;
-
-function isValidBlobUrl(url: string): boolean {
-  try {
-    const { hostname, protocol } = new URL(url);
-    return protocol === "https:" && VERCEL_BLOB_HOST_RE.test(hostname);
-  } catch {
-    return false;
-  }
-}
+const TRANSCRIPT_ID_RE = /^[a-zA-Z0-9_-]+$/;
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const { id } = await params;
+
+  if (!TRANSCRIPT_ID_RE.test(id)) {
+    return NextResponse.json({ error: "Invalid transcript ID" }, { status: 400 });
+  }
 
   try {
     const result = await getTranscript(id);
@@ -40,6 +37,6 @@ export async function GET(
       error: result.error,
     });
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    return NextResponse.json({ error: toErrorMessage(error) }, { status: 500 });
   }
 }

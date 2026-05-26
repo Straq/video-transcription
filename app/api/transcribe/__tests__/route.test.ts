@@ -5,6 +5,17 @@ vi.mock("@/lib/assemblyai", () => ({
   createTranscript: vi.fn(),
 }));
 
+vi.mock("@/lib/blob", () => ({
+  isValidBlobUrl: (url: string): boolean => {
+    try {
+      const { hostname, protocol } = new URL(url);
+      return protocol === "https:" && /\.vercel-storage\.com$/.test(hostname);
+    } catch {
+      return false;
+    }
+  },
+}));
+
 describe("POST /api/transcribe", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -23,7 +34,7 @@ describe("POST /api/transcribe", () => {
     vi.mocked(createTranscript).mockResolvedValueOnce("transcript-abc");
 
     const { POST } = await import("../route");
-    const response = await POST(makeRequest({ blobUrl: "https://blob.vercel-storage.com/v.mp4" }));
+    const response = await POST(makeRequest({ blobUrl: "https://store.public.blob.vercel-storage.com/v.mp4" }));
 
     expect(response.status).toBe(200);
     const body = await response.json();
@@ -42,6 +53,22 @@ describe("POST /api/transcribe", () => {
     expect(response.status).toBe(400);
   });
 
+  it("returns 400 when blobUrl uses HTTP instead of HTTPS", async () => {
+    const { POST } = await import("../route");
+    const response = await POST(makeRequest({ blobUrl: "http://store.public.blob.vercel-storage.com/v.mp4" }));
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toMatch(/Vercel Blob/);
+  });
+
+  it("returns 400 when blobUrl is not a Vercel Blob host", async () => {
+    const { POST } = await import("../route");
+    const response = await POST(makeRequest({ blobUrl: "https://evil.example.com/video.mp4" }));
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toMatch(/Vercel Blob/);
+  });
+
   it("returns 400 when body is not valid JSON", async () => {
     const { POST } = await import("../route");
     const request = new Request("http://localhost/api/transcribe", {
@@ -58,7 +85,7 @@ describe("POST /api/transcribe", () => {
     vi.mocked(createTranscript).mockRejectedValueOnce(new Error("AssemblyAI error"));
 
     const { POST } = await import("../route");
-    const response = await POST(makeRequest({ blobUrl: "https://blob.vercel-storage.com/v.mp4" }));
+    const response = await POST(makeRequest({ blobUrl: "https://store.public.blob.vercel-storage.com/v.mp4" }));
 
     expect(response.status).toBe(500);
     const body = await response.json();

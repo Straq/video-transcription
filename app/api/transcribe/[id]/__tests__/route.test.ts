@@ -3,11 +3,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/assemblyai", () => ({
   getTranscript: vi.fn(),
+}));
+
+vi.mock("@/lib/blob", () => ({
   deleteBlob: vi.fn(),
+  isValidBlobUrl: (url: string): boolean => {
+    try {
+      const { hostname, protocol } = new URL(url);
+      return protocol === "https:" && /\.vercel-storage\.com$/.test(hostname);
+    } catch {
+      return false;
+    }
+  },
 }));
 
 const BLOB_URL = "https://abc123.public.blob.vercel-storage.com/video.mp4";
-const ENCODED_BLOB_URL = encodeURIComponent(BLOB_URL);
 
 function makeRequest(id: string, blobUrl?: string): Request {
   const url = blobUrl
@@ -25,8 +35,17 @@ describe("GET /api/transcribe/[id]", () => {
     vi.clearAllMocks();
   });
 
+  it("returns 400 for invalid transcript ID", async () => {
+    const { GET } = await import("../route");
+    const response = await GET(makeRequest("../../etc/passwd"), makeParams("../../etc/passwd"));
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("Invalid transcript ID");
+  });
+
   it("returns status queued without calling deleteBlob", async () => {
-    const { getTranscript, deleteBlob } = await import("@/lib/assemblyai");
+    const { getTranscript } = await import("@/lib/assemblyai");
+    const { deleteBlob } = await import("@/lib/blob");
     vi.mocked(getTranscript).mockResolvedValueOnce({ id: "t-1", status: "queued" });
 
     const { GET } = await import("../route");
@@ -39,7 +58,8 @@ describe("GET /api/transcribe/[id]", () => {
   });
 
   it("returns status processing without calling deleteBlob", async () => {
-    const { getTranscript, deleteBlob } = await import("@/lib/assemblyai");
+    const { getTranscript } = await import("@/lib/assemblyai");
+    const { deleteBlob } = await import("@/lib/blob");
     vi.mocked(getTranscript).mockResolvedValueOnce({ id: "t-1", status: "processing" });
 
     const { GET } = await import("../route");
@@ -52,7 +72,8 @@ describe("GET /api/transcribe/[id]", () => {
   });
 
   it("returns utterances on completed and calls deleteBlob with valid blobUrl", async () => {
-    const { getTranscript, deleteBlob } = await import("@/lib/assemblyai");
+    const { getTranscript } = await import("@/lib/assemblyai");
+    const { deleteBlob } = await import("@/lib/blob");
     vi.mocked(getTranscript).mockResolvedValueOnce({
       id: "t-1",
       status: "completed",
@@ -71,8 +92,9 @@ describe("GET /api/transcribe/[id]", () => {
     expect(deleteBlob).toHaveBeenCalledWith(BLOB_URL);
   });
 
-  it("calls deleteBlob when status is error", async () => {
-    const { getTranscript, deleteBlob } = await import("@/lib/assemblyai");
+  it("calls deleteBlob and returns error message when status is error", async () => {
+    const { getTranscript } = await import("@/lib/assemblyai");
+    const { deleteBlob } = await import("@/lib/blob");
     vi.mocked(getTranscript).mockResolvedValueOnce({
       id: "t-1",
       status: "error",
@@ -85,11 +107,13 @@ describe("GET /api/transcribe/[id]", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.status).toBe("error");
+    expect(body.error).toBe("Audio file corrupted");
     expect(deleteBlob).toHaveBeenCalledWith(BLOB_URL);
   });
 
   it("does NOT call deleteBlob when blobUrl is absent", async () => {
-    const { getTranscript, deleteBlob } = await import("@/lib/assemblyai");
+    const { getTranscript } = await import("@/lib/assemblyai");
+    const { deleteBlob } = await import("@/lib/blob");
     vi.mocked(getTranscript).mockResolvedValueOnce({ id: "t-1", status: "completed" });
 
     const { GET } = await import("../route");
@@ -100,7 +124,8 @@ describe("GET /api/transcribe/[id]", () => {
   });
 
   it("does NOT call deleteBlob when blobUrl fails host validation", async () => {
-    const { getTranscript, deleteBlob } = await import("@/lib/assemblyai");
+    const { getTranscript } = await import("@/lib/assemblyai");
+    const { deleteBlob } = await import("@/lib/blob");
     vi.mocked(getTranscript).mockResolvedValueOnce({ id: "t-1", status: "completed" });
 
     const { GET } = await import("../route");
@@ -114,7 +139,8 @@ describe("GET /api/transcribe/[id]", () => {
   });
 
   it("still returns 200 when deleteBlob throws (cleanup is best-effort)", async () => {
-    const { getTranscript, deleteBlob } = await import("@/lib/assemblyai");
+    const { getTranscript } = await import("@/lib/assemblyai");
+    const { deleteBlob } = await import("@/lib/blob");
     vi.mocked(getTranscript).mockResolvedValueOnce({ id: "t-1", status: "completed" });
     vi.mocked(deleteBlob).mockRejectedValueOnce(new Error("BlobNotFound"));
 
@@ -128,13 +154,13 @@ describe("GET /api/transcribe/[id]", () => {
 
   it("returns 500 when getTranscript throws", async () => {
     const { getTranscript } = await import("@/lib/assemblyai");
-    vi.mocked(getTranscript).mockRejectedValueOnce(new Error("Invalid transcript ID format"));
+    vi.mocked(getTranscript).mockRejectedValueOnce(new Error("Service unavailable"));
 
     const { GET } = await import("../route");
-    const response = await GET(makeRequest("../../etc/passwd"), makeParams("../../etc/passwd"));
+    const response = await GET(makeRequest("valid-id-123"), makeParams("valid-id-123"));
 
     expect(response.status).toBe(500);
     const body = await response.json();
-    expect(body.error).toBe("Invalid transcript ID format");
+    expect(body.error).toBe("Service unavailable");
   });
 });
