@@ -137,4 +137,66 @@ describe("toPdf", () => {
     const text = new TextDecoder().decode(uint8.slice(0, 20));
     expect(text.includes("%PDF")).toBe(true);
   });
+
+  it("throws error for transcript exceeding 5MB estimated size", async () => {
+    const largeUtterances: Utterance[] = Array.from({ length: 10000 }, (_, i) => ({
+      start: i * 1000,
+      end: (i + 1) * 1000,
+      speaker: "A",
+      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(100),
+    }));
+
+    await expect(toPdf(largeUtterances, {})).rejects.toThrow(/too large/i);
+  });
+});
+
+describe("Special character handling", () => {
+  it("preserves quotes in speaker names", () => {
+    const utterances: Utterance[] = [
+      { start: 0, end: 1000, speaker: "A", text: "Hello" },
+    ];
+    const result = toTxt(utterances, { A: 'O\'Brien' });
+    expect(result).toContain('O\'Brien');
+  });
+
+  it("preserves unicode characters in speaker names", () => {
+    const utterances: Utterance[] = [
+      { start: 0, end: 1000, speaker: "A", text: "Hello" },
+    ];
+    const result = toTxt(utterances, { A: "José García" });
+    expect(result).toContain("José García");
+  });
+
+  it("preserves newlines in text", () => {
+    const utterances: Utterance[] = [
+      { start: 0, end: 1000, speaker: "A", text: "Line 1\nLine 2" },
+    ];
+    const result = toTxt(utterances, {});
+    expect(result).toContain("Line 1\nLine 2");
+  });
+
+  it("handles markdown special characters in text", () => {
+    const utterances: Utterance[] = [
+      { start: 0, end: 1000, speaker: "A", text: "## This is bold **text**" },
+    ];
+    const result = toMarkdown(utterances, {});
+    expect(result).toContain("## This is bold **text**");
+  });
+
+  it("handles SRT arrow syntax in text", () => {
+    const utterances: Utterance[] = [
+      { start: 0, end: 1000, speaker: "A", text: "Line 1 --> Line 2" },
+    ];
+    const result = toSrt(utterances, {});
+    expect(result).toContain("Line 1 --> Line 2");
+  });
+
+  it("generates PDF with unicode speaker names", async () => {
+    const utterances: Utterance[] = [
+      { start: 0, end: 1000, speaker: "A", text: "Café" },
+    ];
+    const result = await toPdf(utterances, { A: "François" });
+    expect(result).toBeInstanceOf(ArrayBuffer);
+    expect(result.byteLength).toBeGreaterThan(0);
+  });
 });

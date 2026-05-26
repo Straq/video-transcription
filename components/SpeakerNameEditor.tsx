@@ -22,6 +22,7 @@ export default function SpeakerNameEditor({ speakers, names, onChange }: Speaker
             <span className="text-sm text-muted-foreground w-20 shrink-0">{speaker}</span>
             <input
               type="text"
+              maxLength={100}
               aria-label={`Nazwa mówcy ${speaker}`}
               value={names[speaker] ?? speaker}
               onChange={(e) => handleChange(speaker, e.target.value)}

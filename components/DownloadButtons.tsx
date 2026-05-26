@@ -16,16 +16,23 @@ export default function DownloadButtons({ utterances, speakerNames }: DownloadBu
     const parts: BlobPart[] = [content];
     const blob = new Blob(parts, { type });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   }
 
   async function handleDownload(format: "txt" | "srt" | "md" | "pdf") {
+    if (!utterances?.length) {
+      return;
+    }
+
     setIsLoading(format);
     try {
       const timestamp = new Date().toISOString().slice(0, 10);
@@ -46,8 +53,12 @@ export default function DownloadButtons({ utterances, speakerNames }: DownloadBu
           break;
         }
         case "pdf": {
-          const content = await toPdf(utterances, speakerNames);
-          download(content, `transkrypcja-${timestamp}.pdf`, "application/pdf");
+          try {
+            const content = await toPdf(utterances, speakerNames);
+            download(content, `transkrypcja-${timestamp}.pdf`, "application/pdf");
+          } catch (err) {
+            console.error("PDF generation failed:", err);
+          }
           break;
         }
       }
