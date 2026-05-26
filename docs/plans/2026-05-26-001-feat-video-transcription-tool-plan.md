@@ -117,7 +117,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 1: Project Setup**
+- [x] **Unit 1: Project Setup**
 
 **Cel:** Bootstrapuj nową aplikację Next.js z pełnym stackiem, env vars i strukturą folderów.
 
