@@ -59,13 +59,21 @@ export function toMarkdown(
 
 const MAX_PDF_SIZE_MB = 5;
 
+// PDF layout constants
+const PDF_HEADER_FONT_SIZE = 11;
+const PDF_BODY_FONT_SIZE = 10;
+const PDF_MARGIN = 10;
+const PDF_HEADER_LINE_HEIGHT = 7;
+const PDF_BODY_LINE_HEIGHT = 5;
+const PDF_UTTERANCE_SPACING = 4;
+
 export async function toPdf(
   utterances: Utterance[],
   speakerNames: Record<string, string>
 ): Promise<ArrayBuffer> {
   const estimatedBytes = utterances.reduce((sum, u) => {
-    return sum + u.text.length + 50; // ~50 bytes overhead per utterance
-  }, 1000); // 1KB header
+    return sum + u.text.length + 50;
+  }, 1000);
   const estimatedMB = estimatedBytes / (1024 * 1024);
 
   if (estimatedMB > MAX_PDF_SIZE_MB) {
@@ -77,43 +85,42 @@ export async function toPdf(
 
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF();
-  let y = 10;
+  let y = PDF_MARGIN;
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 10;
-  const maxWidth = doc.internal.pageSize.getWidth() - 2 * margin;
+  const maxWidth = doc.internal.pageSize.getWidth() - 2 * PDF_MARGIN;
 
   for (const u of utterances) {
     const name = speakerNames[u.speaker] ?? u.speaker;
     const timestamp = msToTimestamp(u.start);
     const header = `${timestamp} - ${name}`;
 
-    doc.setFontSize(11);
+    doc.setFontSize(PDF_HEADER_FONT_SIZE);
     doc.setFont("helvetica", "bold");
     const headerLines = doc.splitTextToSize(header, maxWidth);
     for (const line of headerLines) {
-      if (y + 7 > pageHeight - margin) {
+      if (y + PDF_HEADER_LINE_HEIGHT > pageHeight - PDF_MARGIN) {
         doc.addPage();
-        y = margin;
+        y = PDF_MARGIN;
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (doc as any).text(line, margin, y);
-      y += 7;
+      (doc as any).text(line, PDF_MARGIN, y);
+      y += PDF_HEADER_LINE_HEIGHT;
     }
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(PDF_BODY_FONT_SIZE);
     const textLines = doc.splitTextToSize(u.text, maxWidth);
     for (const line of textLines) {
-      if (y + 5 > pageHeight - margin) {
+      if (y + PDF_BODY_LINE_HEIGHT > pageHeight - PDF_MARGIN) {
         doc.addPage();
-        y = margin;
+        y = PDF_MARGIN;
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (doc as any).text(line, margin, y);
-      y += 5;
+      (doc as any).text(line, PDF_MARGIN, y);
+      y += PDF_BODY_LINE_HEIGHT;
     }
 
-    y += 4;
+    y += PDF_UTTERANCE_SPACING;
   }
 
   return doc.output("arraybuffer") as ArrayBuffer;
