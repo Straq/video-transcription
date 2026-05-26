@@ -3,6 +3,8 @@
 import { useState } from "react";
 import UploadDropzone from "@/components/UploadDropzone";
 import TranscriptionProgress from "@/components/TranscriptionProgress";
+import TranscriptionViewer from "@/components/TranscriptionViewer";
+import SpeakerNameEditor from "@/components/SpeakerNameEditor";
 import { useTranscriptionPolling } from "@/hooks/useTranscriptionPolling";
 import { toErrorMessage } from "@/lib/errors";
 
@@ -10,6 +12,7 @@ export default function Home() {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [transcriptId, setTranscriptId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [speakerNames, setSpeakerNames] = useState<Record<string, string>>({});
 
   const transcriptionState = useTranscriptionPolling(transcriptId, blobUrl);
 
@@ -35,7 +38,13 @@ export default function Home() {
     }
   }
 
+  const isCompleted = transcriptionState.status === "completed";
   const showUpload = transcriptId === null;
+  const showProgress = transcriptId !== null && !isCompleted;
+
+  const uniqueSpeakers = isCompleted
+    ? [...new Set(transcriptionState.utterances.map((u) => u.speaker))]
+    : [];
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
@@ -57,8 +66,23 @@ export default function Home() {
           </div>
         )}
 
-        {transcriptId && (
+        {showProgress && (
           <TranscriptionProgress state={transcriptionState} />
+        )}
+
+        {isCompleted && (
+          <>
+            <SpeakerNameEditor
+              speakers={uniqueSpeakers}
+              names={speakerNames}
+              onChange={setSpeakerNames}
+            />
+            <TranscriptionViewer
+              utterances={transcriptionState.utterances}
+              speakerNames={speakerNames}
+              detectedLanguage={transcriptionState.detectedLanguage}
+            />
+          </>
         )}
       </div>
     </main>
