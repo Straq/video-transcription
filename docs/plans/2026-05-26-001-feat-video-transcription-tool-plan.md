@@ -338,7 +338,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 6: Download Formatters**
+- [x] **Unit 6: Download Formatters**
 
 **Cel:** Generowanie i download TXT, SRT, Markdown, PDF z opcjonalnie podmienionymi nazwami mówców.
 

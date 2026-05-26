@@ -5,6 +5,7 @@ import UploadDropzone from "@/components/UploadDropzone";
 import TranscriptionProgress from "@/components/TranscriptionProgress";
 import TranscriptionViewer from "@/components/TranscriptionViewer";
 import SpeakerNameEditor from "@/components/SpeakerNameEditor";
+import DownloadButtons from "@/components/DownloadButtons";
 import { useTranscriptionPolling } from "@/hooks/useTranscriptionPolling";
 import { toErrorMessage } from "@/lib/errors";
 
@@ -76,6 +77,10 @@ export default function Home() {
               speakers={uniqueSpeakers}
               names={speakerNames}
               onChange={setSpeakerNames}
+            />
+            <DownloadButtons
+              utterances={transcriptionState.utterances}
+              speakerNames={speakerNames}
             />
             <TranscriptionViewer
               utterances={transcriptionState.utterances}
