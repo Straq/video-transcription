@@ -181,7 +181,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 2: Upload UI + Vercel Blob**
+- [x] **Unit 2: Upload UI + Vercel Blob**
 
 **Cel:** Komponent dropzone z progress barem, bezpośredni upload do Vercel Blob przez client token.
 
