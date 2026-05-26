@@ -119,4 +119,45 @@ describe("POST /api/notify", () => {
     const body = await response.json();
     expect(body.error).toContain("Too many");
   });
+
+  it("accepts email with plus addressing", async () => {
+    const { sendTranscriptionReadyEmail } = await import("@/lib/resend");
+    vi.mocked(sendTranscriptionReadyEmail).mockResolvedValueOnce(undefined);
+
+    const response = await makeRequest({
+      email: "user+transcription@example.com",
+      transcriptId: "t-123",
+    });
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(sendTranscriptionReadyEmail)).toHaveBeenCalledWith({
+      to: "user+transcription@example.com",
+    });
+  });
+
+  it("accepts email with subdomain", async () => {
+    const { sendTranscriptionReadyEmail } = await import("@/lib/resend");
+    vi.mocked(sendTranscriptionReadyEmail).mockResolvedValueOnce(undefined);
+
+    const response = await makeRequest({
+      email: "user@mail.example.co.uk",
+      transcriptId: "t-123",
+    });
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(sendTranscriptionReadyEmail)).toHaveBeenCalledWith({
+      to: "user@mail.example.co.uk",
+    });
+  });
+
+  it("rejects invalid transcriptId format", async () => {
+    const response = await makeRequest({
+      email: "user@example.com",
+      transcriptId: "t@#$%invalid",
+    });
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("Invalid request");
+  });
 });

@@ -1,11 +1,16 @@
 import "server-only";
 // API routes using this module must set: export const runtime = "nodejs"
 import { Resend } from "resend";
-import { z } from "zod";
 import { env } from "./env";
 
+// Singleton pattern to avoid creating new Resend client on every call
+let resendClient: Resend | null = null;
+
 function getResendClient(): Resend {
-  return new Resend(env.RESEND_API_KEY);
+  if (!resendClient) {
+    resendClient = new Resend(env.RESEND_API_KEY);
+  }
+  return resendClient;
 }
 
 export interface SendTranscriptionReadyEmailParams {
@@ -15,7 +20,9 @@ export interface SendTranscriptionReadyEmailParams {
 export async function sendTranscriptionReadyEmail(
   params: SendTranscriptionReadyEmailParams
 ): Promise<void> {
-  z.string().email("Invalid recipient email address").parse(params.to);
+  // Email validation is done at API boundary by POST /api/notify
+  // This function assumes input is already validated
+  const appUrl = new URL(env.APP_URL).toString(); // Validates URL structure
 
   const resend = getResendClient();
 
@@ -25,11 +32,12 @@ export async function sendTranscriptionReadyEmail(
     subject: "Twoja transkrypcja jest gotowa",
     html: `
       <p>Twoja transkrypcja wideo została zakończona.</p>
-      <p><a href="${env.APP_URL}">Wróć do narzędzia</a>, aby pobrać wynik.</p>
+      <p><a href="${appUrl}">Wróć do narzędzia</a>, aby pobrać wynik.</p>
     `,
   });
 
   if (error) {
-    throw new Error(`Resend send failed: ${error.message}`);
+    console.error("Resend error:", error);
+    throw new Error("Failed to send email notification");
   }
 }

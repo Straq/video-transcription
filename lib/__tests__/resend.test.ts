@@ -53,15 +53,20 @@ describe("sendTranscriptionReadyEmail", () => {
     const { sendTranscriptionReadyEmail } = await import("../resend");
     await expect(
       sendTranscriptionReadyEmail({ to: "user@example.com" })
-    ).rejects.toThrow("Resend send failed: Delivery failed");
+    ).rejects.toThrow("Failed to send email notification");
   });
 
-  it("throws when recipient email is invalid", async () => {
+  it("sends email even with special characters in address", async () => {
+    mockSend.mockResolvedValueOnce({ data: { id: "email-456" }, error: null });
+
     const { sendTranscriptionReadyEmail } = await import("../resend");
-    await expect(
-      sendTranscriptionReadyEmail({ to: "not-an-email" })
-    ).rejects.toThrow("Invalid recipient email address");
-    expect(mockSend).not.toHaveBeenCalled();
+    await sendTranscriptionReadyEmail({ to: "user+transcription@example.co.uk" });
+
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "user+transcription@example.co.uk",
+      })
+    );
   });
 
   it("throws when RESEND_API_KEY is missing", async () => {

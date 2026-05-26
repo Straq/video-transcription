@@ -9,10 +9,15 @@ import DownloadButtons from "@/components/DownloadButtons";
 import { useTranscriptionPolling } from "@/hooks/useTranscriptionPolling";
 import { toErrorMessage } from "@/lib/errors";
 
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export default function Home() {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [transcriptId, setTranscriptId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [speakerNames, setSpeakerNames] = useState<Record<string, string>>({});
   const [email, setEmail] = useState<string>("");
   const [notificationSent, setNotificationSent] = useState(false);
@@ -34,11 +39,18 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, transcriptId }),
         signal: controller.signal,
-      }).catch((err) => {
-        if (err instanceof Error && err.name !== "AbortError") {
-          console.error("Failed to send notification:", err);
-        }
-      });
+      })
+        .then((res) => {
+          if (!res.ok) {
+            setEmailError("Nie udało się wysłać powiadomienia e-mail");
+          }
+        })
+        .catch((err) => {
+          if (err instanceof Error && err.name !== "AbortError") {
+            console.error("Failed to send notification:", err);
+            setEmailError("Nie udało się wysłać powiadomienia e-mail");
+          }
+        });
 
       return () => {
         controller.abort();
@@ -106,6 +118,12 @@ export default function Home() {
             </div>
             <UploadDropzone onUploadComplete={handleUploadComplete} />
           </>
+        )}
+
+        {emailError && (
+          <div role="alert" className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-center text-sm text-destructive">
+            {emailError}
+          </div>
         )}
 
         {submitError && (
