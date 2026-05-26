@@ -5,16 +5,10 @@ vi.mock("@/lib/assemblyai", () => ({
   createTranscript: vi.fn(),
 }));
 
-vi.mock("@/lib/blob", () => ({
-  isValidBlobUrl: (url: string): boolean => {
-    try {
-      const { hostname, protocol } = new URL(url);
-      return protocol === "https:" && /\.vercel-storage\.com$/.test(hostname);
-    } catch {
-      return false;
-    }
-  },
-}));
+vi.mock("@/lib/blob", async (importActual) => {
+  const actual = await importActual<typeof import("@/lib/blob")>();
+  return { isValidBlobUrl: actual.isValidBlobUrl };
+});
 
 describe("POST /api/transcribe", () => {
   beforeEach(() => {
@@ -39,6 +33,7 @@ describe("POST /api/transcribe", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.transcriptId).toBe("transcript-abc");
+    expect(createTranscript).toHaveBeenCalledWith({ audioUrl: "https://store.public.blob.vercel-storage.com/v.mp4" });
   });
 
   it("returns 400 when blobUrl is missing", async () => {

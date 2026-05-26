@@ -85,6 +85,13 @@ describe("createTranscript", () => {
       createTranscript({ audioUrl: "not-a-url-at-all" })
     ).rejects.toThrow("Invalid audio URL");
   });
+
+  it("throws on non-Vercel Blob host", async () => {
+    const { createTranscript } = await import("../assemblyai");
+    await expect(
+      createTranscript({ audioUrl: "https://evil.example.com/video.mp4" })
+    ).rejects.toThrow("Audio URL must be a Vercel Blob URL");
+  });
 });
 
 describe("getTranscript", () => {

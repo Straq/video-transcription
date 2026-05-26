@@ -85,7 +85,7 @@ describe("UploadDropzone", () => {
 
   it("progress callback updates the progress bar, then calls onUploadComplete", async () => {
     const onUploadComplete = vi.fn();
-    let resolveUpload!: (value: PutBlobResult) => void;
+    let resolveUpload: ((value: PutBlobResult) => void) | undefined;
     let capturedProgress: ((e: UploadProgressEvent) => void) | undefined;
 
     vi.mocked(upload).mockImplementationOnce(async (_name, _body, options) => {
@@ -114,7 +114,7 @@ describe("UploadDropzone", () => {
 
     // Resolve the upload — component transitions to completed
     await act(async () => {
-      resolveUpload({
+      resolveUpload?.({
         url: "https://blob.vercel.com/meeting.mp4",
         pathname: "meeting.mp4",
         contentType: "video/mp4",

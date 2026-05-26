@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { isValidBlobUrl } from "../blob";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { isValidBlobUrl, deleteBlob } from "../blob";
 
 vi.mock("@vercel/blob", () => ({
   del: vi.fn(),
@@ -31,15 +31,10 @@ describe("deleteBlob", () => {
   const BLOB_URL = "https://abc123.public.blob.vercel-storage.com/video.mp4";
 
   beforeEach(() => {
-    vi.resetModules();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it("calls del with the provided URL", async () => {
-    const { deleteBlob } = await import("../blob");
     const { del } = await import("@vercel/blob");
     await deleteBlob(BLOB_URL);
     expect(vi.mocked(del)).toHaveBeenCalledWith(BLOB_URL);
@@ -48,7 +43,6 @@ describe("deleteBlob", () => {
   it("propagates errors from del", async () => {
     const { del } = await import("@vercel/blob");
     vi.mocked(del).mockRejectedValueOnce(new Error("BlobNotFound"));
-    const { deleteBlob } = await import("../blob");
     await expect(deleteBlob(BLOB_URL)).rejects.toThrow("BlobNotFound");
   });
 });

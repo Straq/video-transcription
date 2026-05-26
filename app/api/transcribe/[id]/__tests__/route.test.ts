@@ -5,17 +5,13 @@ vi.mock("@/lib/assemblyai", () => ({
   getTranscript: vi.fn(),
 }));
 
-vi.mock("@/lib/blob", () => ({
-  deleteBlob: vi.fn(),
-  isValidBlobUrl: (url: string): boolean => {
-    try {
-      const { hostname, protocol } = new URL(url);
-      return protocol === "https:" && /\.vercel-storage\.com$/.test(hostname);
-    } catch {
-      return false;
-    }
-  },
-}));
+vi.mock("@/lib/blob", async (importActual) => {
+  const actual = await importActual<typeof import("@/lib/blob")>();
+  return {
+    isValidBlobUrl: actual.isValidBlobUrl,
+    deleteBlob: vi.fn(),
+  };
+});
 
 const BLOB_URL = "https://abc123.public.blob.vercel-storage.com/video.mp4";
 
@@ -120,6 +116,8 @@ describe("GET /api/transcribe/[id]", () => {
     const response = await GET(makeRequest("t-1"), makeParams("t-1"));
 
     expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.status).toBe("completed");
     expect(deleteBlob).not.toHaveBeenCalled();
   });
 

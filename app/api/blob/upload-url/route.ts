@@ -1,14 +1,20 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
+import { toErrorMessage } from "@/lib/errors";
 
 const MAX_SIZE_BYTES = 1024 * 1024 * 1024; // 1GB
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
   try {
     const jsonResponse = await handleUpload({
-      body,
+      body: body as HandleUploadBody,
       request,
       onBeforeGenerateToken: async () => ({
         allowedContentTypes: ["video/*", "audio/*"],
@@ -20,7 +26,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json(jsonResponse);
   } catch (error) {
     return NextResponse.json(
-      { error: (error as Error).message },
+      { error: toErrorMessage(error) },
       { status: 400 }
     );
   }

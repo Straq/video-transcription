@@ -210,6 +210,27 @@ Backend → DELETE Blob URL (po completed/error)
 **Weryfikacja:**
 - Plik wideo wgrany do Vercel Blob, zwrócony URL dostępny z przeglądarki
 
+**Do poprawy po review Units 2 i 3:**
+
+- [x] 🟠 [P2-1] **lib/assemblyai.ts:validateAudioUrl** — dodaj walidację hosta (`.vercel-storage.com`) — defense-in-depth SSRF
+- [x] 🟠 [P2-2] **lib/assemblyai.ts:assemblyHeaders** — zamień funkcję na stałą modułową `ASSEMBLY_HEADERS`
+- [x] 🟠 [P2-3] **lib/assemblyai.ts:createTranscript,getTranscript** — dodaj `signal: AbortSignal.timeout(8000)` do fetch
+- [x] 🟠 [P2-4] **lib/assemblyai.ts:getTranscript** — usuń identity map na utterances (Zod już shapuje)
+- [x] 🟠 [P2-5] **components/UploadDropzone.tsx** — dodaj AbortController + cleanup useEffect dla upload()
+- [x] 🟠 [P2-6] **components/UploadDropzone.tsx:57** — zastąp `(err as Error).message` przez `toErrorMessage(err)`
+- [x] 🟠 [P2-7] **app/api/blob/upload-url/route.ts:7** — zastąp `as HandleUploadBody` przez `unknown` + obsłuż JSON parse error
+- [x] 🟠 [P2-8] **app/api/blob/upload-url/route.ts:23** — zastąp `(error as Error).message` przez `toErrorMessage(error)`
+- [x] 🟠 [P2-9] **app/api/transcribe/__tests__/route.test.ts** — dodaj asercję `toHaveBeenCalledWith` dla createTranscript
+- [x] 🟠 [P2-10] **app/api/transcribe/__tests__/route.test.ts + [id]** — zastąp inline `isValidBlobUrl` przez `vi.importActual`
+- [x] 🟠 [P2-11] **app/api/transcribe/[id]/__tests__/route.test.ts:114** — dodaj asercję `body.status === "completed"` w brak-blobUrl teście
+- [x] 🟠 [P2-12] **lib/__tests__/blob.test.ts** — usuń `vi.resetModules()` + przejdź na statyczne importy
+- [x] 🟠 [P2-13] **lib/__tests__/assemblyai.test.ts** — dodaj test: non-Vercel host → throws
+- [x] 🟠 [P2-14] **components/__tests__/UploadDropzone.test.tsx:88** — zastąp `resolveUpload!` przez `| undefined` + optional call
+
+**Accepted risks (design decisions):**
+- Security: brak auth na `/api/blob/upload-url` i `/api/transcribe` — by design (R9/R10: personal tool, zero auth)
+- Performance: blob deletion coupled to polling GET — by design (brak persystencji sesji, ephemeral personal tool)
+
 ---
 
 - [x] **Unit 3: AssemblyAI Transcription API**

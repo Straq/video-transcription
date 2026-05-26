@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { env } from "./env";
+import { isValidBlobUrl } from "./blob";
 
 export const TranscriptStatusSchema = z.enum([
   "queued",
@@ -45,15 +46,14 @@ const GetTranscriptResponseSchema = z.object({
 });
 
 const ASSEMBLYAI_BASE_URL = "https://api.assemblyai.com/v2";
+const ASSEMBLYAI_TIMEOUT_MS = 8_000;
 // AssemblyAI IDs are alphanumeric with hyphens/underscores — blocks path traversal injection
 const TRANSCRIPT_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
-function assemblyHeaders(): HeadersInit {
-  return {
-    Authorization: env.ASSEMBLYAI_API_KEY,
-    "Content-Type": "application/json",
-  };
-}
+const ASSEMBLY_HEADERS: HeadersInit = {
+  Authorization: env.ASSEMBLYAI_API_KEY,
+  "Content-Type": "application/json",
+};
 
 function validateTranscriptId(id: string): void {
   if (!TRANSCRIPT_ID_PATTERN.test(id)) {
@@ -71,6 +71,9 @@ function validateAudioUrl(url: string): void {
   if (parsed.protocol !== "https:") {
     throw new Error("Audio URL must use HTTPS");
   }
+  if (!isValidBlobUrl(url)) {
+    throw new Error("Audio URL must be a Vercel Blob URL");
+  }
 }
 
 export async function createTranscript(
@@ -80,13 +83,14 @@ export async function createTranscript(
 
   const response = await fetch(`${ASSEMBLYAI_BASE_URL}/transcript`, {
     method: "POST",
-    headers: assemblyHeaders(),
+    headers: ASSEMBLY_HEADERS,
     body: JSON.stringify({
       audio_url: params.audioUrl,
       speech_model: "universal",
       speaker_labels: true,
       language_detection: true,
     }),
+    signal: AbortSignal.timeout(ASSEMBLYAI_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -103,7 +107,8 @@ export async function getTranscript(id: string): Promise<TranscriptResult> {
   validateTranscriptId(id);
 
   const response = await fetch(`${ASSEMBLYAI_BASE_URL}/transcript/${id}`, {
-    headers: assemblyHeaders(),
+    headers: ASSEMBLY_HEADERS,
+    signal: AbortSignal.timeout(ASSEMBLYAI_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -117,12 +122,7 @@ export async function getTranscript(id: string): Promise<TranscriptResult> {
   return {
     id: data.id,
     status: data.status,
-    utterances: data.utterances?.map((u) => ({
-      start: u.start,
-      end: u.end,
-      speaker: u.speaker,
-      text: u.text,
-    })),
+    utterances: data.utterances,
     detectedLanguage: data.language_code,
     error: data.error,
   };

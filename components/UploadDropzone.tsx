@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, type DragEvent, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, type DragEvent, type ChangeEvent } from "react";
 import { upload } from "@vercel/blob/client";
 import UploadProgress from "./UploadProgress";
+import { toErrorMessage } from "@/lib/errors";
 
 const MAX_FILE_SIZE_BYTES = 1024 * 1024 * 1024; // 1GB
 const ACCEPTED_MIME_PREFIXES = ["video/", "audio/"] as const;
@@ -34,6 +35,13 @@ export default function UploadDropzone({ onUploadComplete }: UploadDropzoneProps
   const [state, setState] = useState<UploadState>({ status: "idle" });
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   async function handleFile(file: File): Promise<void> {
     const error = validateFile(file);
@@ -42,6 +50,7 @@ export default function UploadDropzone({ onUploadComplete }: UploadDropzoneProps
       return;
     }
 
+    abortControllerRef.current = new AbortController();
     setState({ status: "uploading", progress: 0 });
     try {
       const blob = await upload(file.name, file, {
@@ -50,11 +59,13 @@ export default function UploadDropzone({ onUploadComplete }: UploadDropzoneProps
         onUploadProgress: ({ percentage }) => {
           setState({ status: "uploading", progress: percentage });
         },
+        abortSignal: abortControllerRef.current.signal,
       });
       setState({ status: "completed", url: blob.url });
       onUploadComplete(blob.url);
     } catch (err) {
-      setState({ status: "error", message: (err as Error).message });
+      if (err instanceof Error && err.name === "AbortError") return;
+      setState({ status: "error", message: toErrorMessage(err) });
     }
   }
 
