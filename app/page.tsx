@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import UploadDropzone from "@/components/UploadDropzone";
 import TranscriptionProgress from "@/components/TranscriptionProgress";
 import TranscriptionViewer from "@/components/TranscriptionViewer";
@@ -14,8 +14,25 @@ export default function Home() {
   const [transcriptId, setTranscriptId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [speakerNames, setSpeakerNames] = useState<Record<string, string>>({});
+  const [email, setEmail] = useState<string>("");
 
   const transcriptionState = useTranscriptionPolling(transcriptId, blobUrl);
+
+  useEffect(() => {
+    if (
+      transcriptionState.status === "completed" &&
+      email &&
+      transcriptId
+    ) {
+      fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, transcriptId }),
+      }).catch((err) => {
+        console.error("Failed to send notification:", err);
+      });
+    }
+  }, [transcriptionState.status, email, transcriptId]);
 
   async function handleUploadComplete(url: string) {
     setBlobUrl(url);
@@ -24,7 +41,7 @@ export default function Home() {
       const response = await fetch("/api/transcribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ blobUrl: url }),
+        body: JSON.stringify({ blobUrl: url, email: email || null }),
       });
       const data = await response.json() as { transcriptId?: string; error?: string };
       if (!response.ok) {
@@ -58,7 +75,25 @@ export default function Home() {
         </div>
 
         {showUpload && (
-          <UploadDropzone onUploadComplete={handleUploadComplete} />
+          <>
+            <div className="space-y-4">
+              <label htmlFor="email" className="block text-sm">
+                <span className="font-medium">E-mail (opcjonalnie)</span>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Otrzymasz powiadomienie e-mail gdy transkrypcja będzie gotowa
+                </p>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="twój@email.com"
+                  className="mt-2 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </label>
+            </div>
+            <UploadDropzone onUploadComplete={handleUploadComplete} />
+          </>
         )}
 
         {submitError && (

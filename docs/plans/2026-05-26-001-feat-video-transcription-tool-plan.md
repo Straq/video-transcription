@@ -370,7 +370,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 7: Email Notification**
+- [x] **Unit 7: Email Notification**
 
 **Cel:** Opcjonalne powiadomienie e-mail przez Resend gdy transkrypcja gotowa.
 
