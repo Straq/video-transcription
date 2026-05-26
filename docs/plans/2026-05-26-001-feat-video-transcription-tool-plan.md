@@ -151,20 +151,20 @@ Backend → DELETE Blob URL (po completed/error)
 
 **Do poprawy po review Unit 1:**
 
-- [ ] 🟠 [P2-1] **lib/env.ts, lib/assemblyai.ts, lib/resend.ts** — dodaj `import "server-only"` na początku każdego pliku
-- [ ] 🟠 [P2-2] **app/globals.css:10** — zamień `"Geist"` na `var(--font-geist-sans)` (font wiring broken)
-- [ ] 🟠 [P2-3] **package.json** — usuń `assemblyai` SDK z deps lub zastąp nim raw fetch client; zdecyduj jedno podejście
-- [ ] 🟠 [P2-4] **package.json** — przenieś `shadcn` z `dependencies` do `devDependencies`
-- [ ] 🟠 [P2-5] **lib/assemblyai.ts:62,78** — zastąp `as` assertions Zod schema lub runtime shape check
-- [ ] 🟠 [P2-6] **lib/__tests__/assemblyai.test.ts:146** — usuń `utterances!` — użyj `result.utterances?.at(0)`
-- [ ] 🟠 [P2-7] **lib/assemblyai.ts, lib/resend.ts** — importuj `env` z `lib/env.ts` zamiast czytać `process.env` bezpośrednio
-- [ ] 🟠 [P2-8] **lib/__tests__/assemblyai.test.ts** — usuń lub przepisz `describe("AssemblyAI types")` — testy type-shape nie mają wartości runtime
-- [ ] 🟠 [P2-9] **lib/resend.ts** — dodaj plik testowy `lib/__tests__/resend.test.ts` z happy path i error case
-- [ ] 🟠 [P2-10] **lib/__tests__/assemblyai.test.ts** — dodaj: getTranscript error case, status "error" i "queued", asercja `speech_model` w createTranscript
-- [ ] 🟡 [N1] **app/layout.tsx** — zmień `lang="en"` na `lang="pl"`
-- [ ] 🟡 [N2] **lib/env.ts** — `RESEND_FROM_EMAIL` bez default lub zmień na realistyczny adres
-- [ ] 🟡 [N3] **vitest.config.ts** — usuń `globals: true` (testy importują explicite, nie korzystają z globals)
-- [ ] 🟡 [N4] **package.json** — zamień `^` na exact versions we wszystkich dependencies
+- [x] 🟠 [P2-1] **lib/env.ts, lib/assemblyai.ts, lib/resend.ts** — dodaj `import "server-only"` na początku każdego pliku
+- [x] 🟠 [P2-2] **app/globals.css:10** — zamień `"Geist"` na `var(--font-geist-sans)` (font wiring broken)
+- [x] 🟠 [P2-3] **package.json** — usuń `assemblyai` SDK z deps lub zastąp nim raw fetch client; zdecyduj jedno podejście
+- [x] 🟠 [P2-4] **package.json** — przenieś `shadcn` z `dependencies` do `devDependencies`
+- [x] 🟠 [P2-5] **lib/assemblyai.ts:62,78** — zastąp `as` assertions Zod schema lub runtime shape check
+- [x] 🟠 [P2-6] **lib/__tests__/assemblyai.test.ts:146** — usuń `utterances!` — użyj `result.utterances?.at(0)`
+- [x] 🟠 [P2-7] **lib/assemblyai.ts, lib/resend.ts** — importuj `env` z `lib/env.ts` zamiast czytać `process.env` bezpośrednio
+- [x] 🟠 [P2-8] **lib/__tests__/assemblyai.test.ts** — usuń lub przepisz `describe("AssemblyAI types")` — testy type-shape nie mają wartości runtime
+- [x] 🟠 [P2-9] **lib/resend.ts** — dodaj plik testowy `lib/__tests__/resend.test.ts` z happy path i error case
+- [x] 🟠 [P2-10] **lib/__tests__/assemblyai.test.ts** — dodaj: getTranscript error case, status "error" i "queued", asercja `speech_model` w createTranscript
+- [x] 🟡 [N1] **app/layout.tsx** — zmień `lang="en"` na `lang="pl"`
+- [x] 🟡 [N2] **lib/env.ts** — `RESEND_FROM_EMAIL` bez default lub zmień na realistyczny adres
+- [x] 🟡 [N3] **vitest.config.ts** — usuń `globals: true` (testy importują explicite, nie korzystają z globals)
+- [x] 🟡 [N4] **package.json** — zamień `^` na exact versions we wszystkich dependencies
 
 ---
 

@@ -1,9 +1,10 @@
+import "server-only";
+// API routes using this module must set: export const runtime = "nodejs"
 import { Resend } from "resend";
+import { env } from "./env";
 
 function getResendClient(): Resend {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error("RESEND_API_KEY is not set");
-  return new Resend(key);
+  return new Resend(env.RESEND_API_KEY);
 }
 
 export interface SendTranscriptionReadyEmailParams {
@@ -15,10 +16,9 @@ export async function sendTranscriptionReadyEmail(
   params: SendTranscriptionReadyEmailParams
 ): Promise<void> {
   const resend = getResendClient();
-  const from = process.env.RESEND_FROM_EMAIL ?? "noreply@example.com";
 
   const { error } = await resend.emails.send({
-    from,
+    from: env.RESEND_FROM_EMAIL,
     to: params.to,
     subject: "Twoja transkrypcja jest gotowa",
     html: `
