@@ -274,7 +274,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 4: Polling + Progress UI**
+- [x] **Unit 4: Polling + Progress UI**
 
 **Cel:** Frontend polling statusu co 5s (potem 15s), progress bar ze statusem, obsługa timeout i błędów.
 
