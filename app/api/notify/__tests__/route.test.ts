@@ -49,7 +49,7 @@ describe("POST /api/notify", () => {
     });
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toMatch(/email/i);
+    expect(body.error).toBe("Invalid request");
   });
 
   it("returns 400 when transcriptId is missing", async () => {
@@ -68,7 +68,7 @@ describe("POST /api/notify", () => {
     );
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toMatch(/JSON/);
+    expect(body.error).toBe("Invalid JSON body");
   });
 
   it("returns 500 when sendTranscriptionReadyEmail throws", async () => {
@@ -84,6 +84,39 @@ describe("POST /api/notify", () => {
 
     expect(response.status).toBe(500);
     const body = await response.json();
-    expect(body.error).toMatch(/Email service down/);
+    expect(body.error).toBe("Failed to send notification");
+  });
+
+  it("returns 400 when transcriptId format is invalid", async () => {
+    const response = await makeRequest({
+      email: "user@example.com",
+      transcriptId: "t@#$%",
+    });
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("Invalid request");
+  });
+
+  it("returns 429 when rate limit is exceeded", async () => {
+    const { sendTranscriptionReadyEmail } = await import("@/lib/resend");
+    vi.mocked(sendTranscriptionReadyEmail).mockResolvedValue(undefined);
+
+    const email = "user@example.com";
+    // Make 10 requests (the limit)
+    for (let i = 0; i < 10; i++) {
+      await makeRequest({
+        email,
+        transcriptId: `t-${i}`,
+      });
+    }
+
+    // 11th request should be rate limited
+    const response = await makeRequest({
+      email,
+      transcriptId: "t-limit",
+    });
+    expect(response.status).toBe(429);
+    const body = await response.json();
+    expect(body.error).toContain("Too many");
   });
 });

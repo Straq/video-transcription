@@ -57,6 +57,11 @@ describe("toTxt", () => {
     const parts = result.split("\n\n");
     expect(parts).toHaveLength(2);
   });
+
+  it("handles empty utterance array", () => {
+    const result = toTxt([], {});
+    expect(result).toBe("");
+  });
 });
 
 describe("toSrt", () => {
@@ -82,6 +87,11 @@ describe("toSrt", () => {
     expect(result).toContain("Paweł: Hello");
     expect(result).toContain("Dave: World");
   });
+
+  it("handles empty utterance array", () => {
+    const result = toSrt([], {});
+    expect(result).toBe("");
+  });
 });
 
 describe("toMarkdown", () => {
@@ -101,6 +111,11 @@ describe("toMarkdown", () => {
     expect(result).toContain("## 00:00:01.000");
     expect(result).toContain("## 00:00:05.500");
     expect(result).toMatch(/Hello\n\n##/);
+  });
+
+  it("handles empty utterance array", () => {
+    const result = toMarkdown([], {});
+    expect(result).toBe("");
   });
 });
 

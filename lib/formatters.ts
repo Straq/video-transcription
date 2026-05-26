@@ -21,42 +21,60 @@ export function toTxt(
   utterances: Utterance[],
   speakerNames: Record<string, string>
 ): string {
-  return utterances
-    .map((u) => {
-      const name = speakerNames[u.speaker] ?? u.speaker;
-      return `${msToTimestamp(u.start)} - ${name}\n${u.text}`;
-    })
-    .join("\n\n");
+  let result = "";
+  for (const u of utterances) {
+    const name = speakerNames[u.speaker] ?? u.speaker;
+    if (result) result += "\n\n";
+    result += `${msToTimestamp(u.start)} - ${name}\n${u.text}`;
+  }
+  return result;
 }
 
 export function toSrt(
   utterances: Utterance[],
   speakerNames: Record<string, string>
 ): string {
-  return utterances
-    .map((u, i) => {
-      const name = speakerNames[u.speaker] ?? u.speaker;
-      return `${i + 1}\n${srtTimestamp(u.start)} --> ${srtTimestamp(u.end)}\n${name}: ${u.text}`;
-    })
-    .join("\n\n");
+  let result = "";
+  for (let i = 0; i < utterances.length; i++) {
+    const u = utterances[i];
+    const name = speakerNames[u.speaker] ?? u.speaker;
+    if (result) result += "\n\n";
+    result += `${i + 1}\n${srtTimestamp(u.start)} --> ${srtTimestamp(u.end)}\n${name}: ${u.text}`;
+  }
+  return result;
 }
 
 export function toMarkdown(
   utterances: Utterance[],
   speakerNames: Record<string, string>
 ): string {
-  return utterances
-    .map((u) => {
-      const name = speakerNames[u.speaker] ?? u.speaker;
-      return `## ${msToTimestamp(u.start)} - ${name}\n\n${u.text}`;
-    })
-    .join("\n\n");
+  let result = "";
+  for (const u of utterances) {
+    const name = speakerNames[u.speaker] ?? u.speaker;
+    if (result) result += "\n\n";
+    result += `## ${msToTimestamp(u.start)} - ${name}\n\n${u.text}`;
+  }
+  return result;
 }
+
+const MAX_PDF_SIZE_MB = 5;
 
 export async function toPdf(
   utterances: Utterance[],
   speakerNames: Record<string, string>
 ): Promise<ArrayBuffer> {
+  const estimatedBytes = utterances.reduce((sum, u) => {
+    return sum + u.text.length + 50; // ~50 bytes overhead per utterance
+  }, 1000); // 1KB header
+  const estimatedMB = estimatedBytes / (1024 * 1024);
+
+  if (estimatedMB > MAX_PDF_SIZE_MB) {
+    throw new Error(
+      `Transcript too large for PDF export (~${estimatedMB.toFixed(1)}MB). ` +
+      `Please use TXT or SRT format instead.`
+    );
+  }
+
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF();
   let y = 10;

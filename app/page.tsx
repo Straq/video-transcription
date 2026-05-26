@@ -15,6 +15,7 @@ export default function Home() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [speakerNames, setSpeakerNames] = useState<Record<string, string>>({});
   const [email, setEmail] = useState<string>("");
+  const [notificationSent, setNotificationSent] = useState(false);
 
   const transcriptionState = useTranscriptionPolling(transcriptId, blobUrl);
 
@@ -22,17 +23,28 @@ export default function Home() {
     if (
       transcriptionState.status === "completed" &&
       email &&
-      transcriptId
+      transcriptId &&
+      !notificationSent
     ) {
+      setNotificationSent(true);
+      const controller = new AbortController();
+
       fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, transcriptId }),
+        signal: controller.signal,
       }).catch((err) => {
-        console.error("Failed to send notification:", err);
+        if (err instanceof Error && err.name !== "AbortError") {
+          console.error("Failed to send notification:", err);
+        }
       });
+
+      return () => {
+        controller.abort();
+      };
     }
-  }, [transcriptionState.status, email, transcriptId]);
+  }, [transcriptionState.status, email, transcriptId, notificationSent]);
 
   async function handleUploadComplete(url: string) {
     setBlobUrl(url);
