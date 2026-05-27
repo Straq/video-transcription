@@ -117,7 +117,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 1: Project Setup**
+- [x] **Unit 1: Project Setup**
 
 **Cel:** Bootstrapuj nową aplikację Next.js z pełnym stackiem, env vars i strukturą folderów.
 
@@ -149,9 +149,39 @@ Backend → DELETE Blob URL (po completed/error)
 - `npm run build` bez błędów
 - `npm run dev` serwuje stronę główną
 
+**Do poprawy po review Unit 1:**
+
+- [x] 🟠 [P2-1] **lib/env.ts, lib/assemblyai.ts, lib/resend.ts** — dodaj `import "server-only"` na początku każdego pliku
+- [x] 🟠 [P2-2] **app/globals.css:10** — zamień `"Geist"` na `var(--font-geist-sans)` (font wiring broken)
+- [x] 🟠 [P2-3] **package.json** — usuń `assemblyai` SDK z deps lub zastąp nim raw fetch client; zdecyduj jedno podejście
+- [x] 🟠 [P2-4] **package.json** — przenieś `shadcn` z `dependencies` do `devDependencies`
+- [x] 🟠 [P2-5] **lib/assemblyai.ts:62,78** — zastąp `as` assertions Zod schema lub runtime shape check
+- [x] 🟠 [P2-6] **lib/__tests__/assemblyai.test.ts:146** — usuń `utterances!` — użyj `result.utterances?.at(0)`
+- [x] 🟠 [P2-7] **lib/assemblyai.ts, lib/resend.ts** — importuj `env` z `lib/env.ts` zamiast czytać `process.env` bezpośrednio
+- [x] 🟠 [P2-8] **lib/__tests__/assemblyai.test.ts** — usuń lub przepisz `describe("AssemblyAI types")` — testy type-shape nie mają wartości runtime
+- [x] 🟠 [P2-9] **lib/resend.ts** — dodaj plik testowy `lib/__tests__/resend.test.ts` z happy path i error case
+- [x] 🟠 [P2-10] **lib/__tests__/assemblyai.test.ts** — dodaj: getTranscript error case, status "error" i "queued", asercja `speech_model` w createTranscript
+- [x] 🟡 [N1] **app/layout.tsx** — zmień `lang="en"` na `lang="pl"`
+- [x] 🟡 [N2] **lib/env.ts** — `RESEND_FROM_EMAIL` bez default lub zmień na realistyczny adres
+- [x] 🟡 [N3] **vitest.config.ts** — usuń `globals: true` (testy importują explicite, nie korzystają z globals)
+- [x] 🟡 [N4] **package.json** — zamień `^` na exact versions we wszystkich dependencies
+
+**Do poprawy po review poprawek Unit 1:**
+
+- [x] 🟠 [F1] **lib/resend.ts:26** — HTML injection: zastąpić `params.appUrl` bezpośrednim `env.APP_URL` (lub `z.string().url().parse(params.appUrl)` przed interpolacją)
+- [x] 🟠 [F2] **lib/assemblyai.ts:93,111** — `console.error` w kodzie produkcyjnym — usunąć lub zastąpić loggerem; nie logować body z zewnętrznego API
+- [x] 🟠 [F3] **lib/__tests__/resend.test.ts:2** — usuń nieużywany `import type { Resend as ResendType }`
+- [x] 🟠 [F4] **lib/__tests__/resend.test.ts:8-12** — zastąpić `as never` + class mock zwykłą `function MockResend()` factory
+- [x] 🟠 [F5] **lib/__tests__/assemblyai.test.ts** — dodaj test: `createTranscript` z całkowicie nieprawidłowym URL (`"not-a-url"`) → `"Invalid audio URL"`
+- [x] 🟠 [F6] **lib/__tests__/assemblyai.test.ts** — dodaj test: `getTranscript` z malformed API response → ZodError (np. brak pola `id`)
+- [x] 🟠 [F7] **lib/__tests__/resend.test.ts** — dodaj test: `sendTranscriptionReadyEmail` przy brakujących env vars → throw na import
+- [x] 🟡 [N1] **lib/__tests__/env.test.ts:20** — usuń redundantny `vi.resetModules()` z `afterEach` (wystarczy `beforeEach`)
+- [x] 🟡 [N2] **lib/assemblyai.ts:48** — dodaj komentarz przy `TRANSCRIPT_ID_PATTERN` o źródle wzorca
+- [x] 🟡 [N3] **lib/resend.ts** — dodaj `z.string().email().parse(params.to)` na początku `sendTranscriptionReadyEmail`
+
 ---
 
-- [ ] **Unit 2: Upload UI + Vercel Blob**
+- [x] **Unit 2: Upload UI + Vercel Blob**
 
 **Cel:** Komponent dropzone z progress barem, bezpośredni upload do Vercel Blob przez client token.
 
@@ -180,9 +210,30 @@ Backend → DELETE Blob URL (po completed/error)
 **Weryfikacja:**
 - Plik wideo wgrany do Vercel Blob, zwrócony URL dostępny z przeglądarki
 
+**Do poprawy po review Units 2 i 3:**
+
+- [x] 🟠 [P2-1] **lib/assemblyai.ts:validateAudioUrl** — dodaj walidację hosta (`.vercel-storage.com`) — defense-in-depth SSRF
+- [x] 🟠 [P2-2] **lib/assemblyai.ts:assemblyHeaders** — zamień funkcję na stałą modułową `ASSEMBLY_HEADERS`
+- [x] 🟠 [P2-3] **lib/assemblyai.ts:createTranscript,getTranscript** — dodaj `signal: AbortSignal.timeout(8000)` do fetch
+- [x] 🟠 [P2-4] **lib/assemblyai.ts:getTranscript** — usuń identity map na utterances (Zod już shapuje)
+- [x] 🟠 [P2-5] **components/UploadDropzone.tsx** — dodaj AbortController + cleanup useEffect dla upload()
+- [x] 🟠 [P2-6] **components/UploadDropzone.tsx:57** — zastąp `(err as Error).message` przez `toErrorMessage(err)`
+- [x] 🟠 [P2-7] **app/api/blob/upload-url/route.ts:7** — zastąp `as HandleUploadBody` przez `unknown` + obsłuż JSON parse error
+- [x] 🟠 [P2-8] **app/api/blob/upload-url/route.ts:23** — zastąp `(error as Error).message` przez `toErrorMessage(error)`
+- [x] 🟠 [P2-9] **app/api/transcribe/__tests__/route.test.ts** — dodaj asercję `toHaveBeenCalledWith` dla createTranscript
+- [x] 🟠 [P2-10] **app/api/transcribe/__tests__/route.test.ts + [id]** — zastąp inline `isValidBlobUrl` przez `vi.importActual`
+- [x] 🟠 [P2-11] **app/api/transcribe/[id]/__tests__/route.test.ts:114** — dodaj asercję `body.status === "completed"` w brak-blobUrl teście
+- [x] 🟠 [P2-12] **lib/__tests__/blob.test.ts** — usuń `vi.resetModules()` + przejdź na statyczne importy
+- [x] 🟠 [P2-13] **lib/__tests__/assemblyai.test.ts** — dodaj test: non-Vercel host → throws
+- [x] 🟠 [P2-14] **components/__tests__/UploadDropzone.test.tsx:88** — zastąp `resolveUpload!` przez `| undefined` + optional call
+
+**Accepted risks (design decisions):**
+- Security: brak auth na `/api/blob/upload-url` i `/api/transcribe` — by design (R9/R10: personal tool, zero auth)
+- Performance: blob deletion coupled to polling GET — by design (brak persystencji sesji, ephemeral personal tool)
+
 ---
 
-- [ ] **Unit 3: AssemblyAI Transcription API**
+- [x] **Unit 3: AssemblyAI Transcription API**
 
 **Cel:** Server-side endpointy do tworzenia joba transkrypcji i sprawdzania statusu. Cleanup Blob po zakończeniu.
 
@@ -202,18 +253,28 @@ Backend → DELETE Blob URL (po completed/error)
 - Cleanup: `del()` z `@vercel/blob` po `completed` lub `error`
 
 **Scenariusze testowe:**
-- [Unit] `createTranscript()` wysyła poprawne parametry do AssemblyAI
-- [Unit] `getTranscript()` zwraca `{ status: 'processing' }` gdy jeszcze nie gotowe
-- [Unit] Blob cleanup wywoływany po `completed` i `error`
-- [Unit] `getTranscript()` zwraca `utterances` z poprawnymi typami
+- [x] [Unit] `createTranscript()` wysyła poprawne parametry do AssemblyAI
+- [x] [Unit] `getTranscript()` zwraca `{ status: 'processing' }` gdy jeszcze nie gotowe
+- [x] [Unit] Blob cleanup wywoływany po `completed` i `error`
+- [x] [Unit] `getTranscript()` zwraca `utterances` z poprawnymi typami
 
 **Weryfikacja:**
-- POST `/api/transcribe` z prawdziwym Blob URL zwraca transcript ID
-- GET `/api/transcribe/:id` zwraca status `queued` lub `processing`
+- [ ] POST `/api/transcribe` z prawdziwym Blob URL zwraca transcript ID
+- [ ] GET `/api/transcribe/:id` zwraca status `queued` lub `processing`
+
+**Do poprawy po review Unit 3:**
+
+- [x] 🟠 [S-P2-1] **app/api/transcribe/route.ts:5-7** — POST akceptuje dowolny HTTPS URL jako blobUrl bez walidacji hosta; dodaj `.refine()` lub sprawdzenie w `validateAudioUrl`
+- [x] 🟠 [A-P2-4] **lib/assemblyai.ts:2,103-105** — przenieś `deleteBlob` i `import del from @vercel/blob` do `lib/blob.ts` (SRP violation)
+- [x] 🟠 [T-P2-5] **app/api/transcribe/__tests__/route.test.ts** — dodaj test: HTTP blobUrl → 400 (Zod refine blokuje przed assemblyai)
+- [x] 🟠 [T-P2-6] **app/api/transcribe/[id]/__tests__/route.test.ts:74** — dodaj asercję `expect(body.error).toBe("Audio file corrupted")`
+- [x] 🟡 [N1] **app/api/transcribe/route.ts:26, [id]/route.ts:43** — zastąp `(error as Error).message` helper `toErrorMessage(unknown): string` w `lib/errors.ts`
+- [x] 🟡 [N2] **app/api/transcribe/[id]/route.ts** — nieprawidłowy transcript ID zwraca 500 zamiast 400; dodaj walidację ID na początku handlera
+- [x] 🟡 [N6] **app/api/transcribe/[id]/__tests__/route.test.ts:10** — usuń nieużywaną stałą `ENCODED_BLOB_URL`
 
 ---
 
-- [ ] **Unit 4: Polling + Progress UI**
+- [x] **Unit 4: Polling + Progress UI**
 
 **Cel:** Frontend polling statusu co 5s (potem 15s), progress bar ze statusem, obsługa timeout i błędów.
 
@@ -244,7 +305,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 5: Transcript Viewer + Speaker Editor**
+- [x] **Unit 5: Transcript Viewer + Speaker Editor** ✅ (review fixes applied)
 
 **Cel:** Wyświetlenie utterances w formacie `HH:MM:SS.mmm - Imię`, inline edycja nazw mówców.
 
@@ -277,7 +338,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 6: Download Formatters**
+- [x] **Unit 6: Download Formatters**
 
 **Cel:** Generowanie i download TXT, SRT, Markdown, PDF z opcjonalnie podmienionymi nazwami mówców.
 
@@ -309,7 +370,7 @@ Backend → DELETE Blob URL (po completed/error)
 
 ---
 
-- [ ] **Unit 7: Email Notification**
+- [x] **Unit 7: Email Notification**
 
 **Cel:** Opcjonalne powiadomienie e-mail przez Resend gdy transkrypcja gotowa.
 
